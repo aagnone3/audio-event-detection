@@ -1,15 +1,13 @@
 import os
-import numpy as np
 from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping, ReduceLROnPlateau, ProgbarLogger
 
 import tensorflow as tf
+from trainers.base import BaseTrain
 from keras.backend.tensorflow_backend import set_session
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 set_session(tf.Session(config=config))
-
-from utils import factory
-from trainers.base import BaseTrain
 
 
 class SimpleTrainer(BaseTrain):
@@ -44,16 +42,12 @@ class SimpleTrainer(BaseTrain):
         )
         self.callbacks.append(
             EarlyStopping(
-                monitor="val_loss",
-                patience=10
+                **self.callbacks_config["EarlyStopping"]
             )
         )
         self.callbacks.append(
             ReduceLROnPlateau(
-                monitor="val_loss",
-                factor=0.1,
-                patience=10,
-                min_lr=int(1e-6)
+                **self.callbacks_config["ReduceLROnPlateau"]
             )
         )
         self.callbacks.append(
