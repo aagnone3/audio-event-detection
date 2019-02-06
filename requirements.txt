@@ -1,0 +1,7 @@
+PyYAML
+keras
+numpy
+scikit-learn
+tensorflow
+torch
+torchvision
