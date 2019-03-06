@@ -46,7 +46,9 @@ class FreesoundDataGenerator(BaseDataLoader):
         self.frame_length = int(self.sampling_rate * self.frame_size_ms / 1000.0)
         self.hop_length = int(self.sampling_rate * self.hop_size_ms / 1000.0)
         self.overlap_length = self.frame_length - self.hop_length
-        self.feature_dim = (self.n_mels, int(np.floor(self.audio_length / self.hop_length)) - 1, 1)
+        self.n_time_frames = int(np.floor(self.audio_length / self.hop_length)) - 1
+        # self.feature_dim = (self.n_mels, self.n_time_frames, 1)  # CNN
+        self.feature_dim = (self.n_time_frames, self.n_mels, 1)  # vggish
         self.window = np.hanning(self.frame_length)
 
         # TODO handle preprocessing functions
@@ -72,8 +74,11 @@ class FreesoundDataGenerator(BaseDataLoader):
         X = np.empty((cur_batch_size, *self.feature_dim))
 
         for i, index in enumerate(indices):
-            X[i] = np.load(self.file_paths[index])['spec']
-            X[i,:,:,0] = self.scaler.transform(X[i,:,:,0].T).T
+            # X[i] = np.load(self.file_paths[index])['spec']  # CNN
+            # X[i,:,:,0] = self.scaler.transform(X[i,:,:,0].T).T  # CNN
+            X[i] = np.swapaxes(np.load(self.file_paths[index])['spec'], 0, 1)  # vggish
+            # import pdb; pdb.set_trace()
+            X[i,:,:,0] = self.scaler.transform(X[i,:,:,0])
 
         y = to_categorical(self.labels[indices], num_classes=self.n_classes)
 

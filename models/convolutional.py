@@ -19,9 +19,8 @@ from models.base import BaseModel
 class CNN(BaseModel):
 
     defaults = {
-        "learning_rate":  0.001
+        "learning_rate": 0.001
     }
-
 
     def __init__(self, input_dim, n_classes, **kwargs):
         super(CNN, self).__init__(**kwargs)
@@ -32,22 +31,22 @@ class CNN(BaseModel):
 
     def build_seq_model(self):
         self.model = Sequential([
-            Convolution2D(32, (4,10), padding="same", input_shape=self.input_dim),
+            Convolution2D(32, (4, 10), padding="same", input_shape=self.input_dim),
             BatchNormalization(),
             LeakyReLU(),
             MaxPool2D(),
 
-            Convolution2D(32, (4,10), padding="same"),
+            Convolution2D(32, (4, 10), padding="same"),
             BatchNormalization(),
             LeakyReLU(),
             MaxPool2D(),
 
-            Convolution2D(32, (4,10), padding="same"),
+            Convolution2D(32, (4, 10), padding="same"),
             BatchNormalization(),
             LeakyReLU(),
             MaxPool2D(),
 
-            Convolution2D(32, (4,10), padding="same"),
+            Convolution2D(32, (4, 10), padding="same"),
             BatchNormalization(),
             LeakyReLU(),
             MaxPool2D(),
@@ -67,22 +66,22 @@ class CNN(BaseModel):
 
     def build_model(self):
         inp = Input(shape=self.input_dim)
-        x = Convolution2D(32, (4,10), padding="same")(inp)
+        x = Convolution2D(32, (4, 10), padding="same")(inp)
         x = BatchNormalization()(x)
         x = Activation("relu")(x)
         x = MaxPool2D()(x)
 
-        x = Convolution2D(32, (4,10), padding="same")(x)
+        x = Convolution2D(32, (4, 10), padding="same")(x)
         x = BatchNormalization()(x)
         x = Activation("relu")(x)
         x = MaxPool2D()(x)
 
-        x = Convolution2D(32, (4,10), padding="same")(x)
+        x = Convolution2D(32, (4, 10), padding="same")(x)
         x = BatchNormalization()(x)
         x = Activation("relu")(x)
         x = MaxPool2D()(x)
 
-        x = Convolution2D(32, (4,10), padding="same")(x)
+        x = Convolution2D(32, (4, 10), padding="same")(x)
         x = BatchNormalization()(x)
         x = Activation("relu")(x)
         x = MaxPool2D()(x)
