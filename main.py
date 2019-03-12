@@ -27,48 +27,38 @@ def process_config(fn):
     return config
 
 
-# load a pre-created mapping of label -> integer index
-with open("etc/label_map.pkl", 'rb') as fp:
-    label_map = pickle.load(fp)
-    label_map['None'] = -1
-
-
 def get_data(config, extract_real_time=False):
-    # load data set meta data and labels
-    data_dir = config["data_loader"]["data_dir"]
-    train_file = path.join(data_dir, "train_post_competition.csv")
-    train_data_dir = path.join(data_dir, "audio_train")
-    test_data_dir = path.join(data_dir, "audio_test")
-    test_file = path.join(data_dir, "test_post_competition.bad_removed.csv")
+    # define directory names
+    train_data_dir = config["data_loader"]["train"]["data_dir"]
+    eval_data_dir = config["data_loader"]["eval"]["data_dir"]
 
-    all_train_data_df = pd.read_csv(train_file)
-    all_train_data_df["label_idx"] = all_train_data_df.label.map(label_map.get).astype(int)
+    # load data set meta data and labels
+    all_train_data_df = pd.read_csv(config["data_loader"]["train"]["meta_file"]).fillna('nan')
 
     train_idx = np.random.choice(all_train_data_df.index, size=int(0.7 * len(all_train_data_df)))
     train_mask = all_train_data_df.index.isin(train_idx)
-    train_df, validation_df = all_train_data_df.loc[train_mask], all_train_data_df.loc[~train_mask]
+    train_df, training_val_df = all_train_data_df.loc[train_mask], all_train_data_df.loc[~train_mask]
 
-    test_df = pd.read_csv(test_file)
-    test_df["label_idx"] = test_df.label.map(label_map.get).astype(int)
+    eval_df = pd.read_csv(config["data_loader"]["eval"]["meta_file"]).fillna('nan')
 
     if len(train_df) == 0:
         raise ValueError("train_df is empty")
-    if len(validation_df) == 0:
-        raise ValueError("validation_df is empty")
-    if len(test_df) == 0:
-        raise ValueError("test_df is empty")
+    if len(training_val_df) == 0:
+        raise ValueError("training_val_df is empty")
+    if len(eval_df) == 0:
+        raise ValueError("eval_df is empty")
 
     if extract_real_time:
-        train_df['fname'] = train_df['fname'].map(lambda fn: path.join(train_data_dir, fn))
-        validation_df['fname'] = validation_df['fname'].map(lambda fn: path.join(train_data_dir, fn))
-        test_df['fname'] = test_df['fname'].map(lambda fn: path.join(test_data_dir, fn))
+        train_df['filename'] = train_df['filename'].map(lambda fn: path.join(train_data_dir, fn))
+        training_val_df['filename'] = training_val_df['filename'].map(lambda fn: path.join(train_data_dir, fn))
+        eval_df['fname'] = eval_df['filename'].map(lambda fn: path.join(eval_data_dir, fn))
     else:
         data_dir = "features"
-        train_df['fname'] = train_df['fname'].map(lambda fn: path.join(data_dir, fn) + '.npz')
-        validation_df['fname'] = validation_df['fname'].map(lambda fn: path.join(data_dir, fn) + '.npz')
-        test_df['fname'] = test_df['fname'].map(lambda fn: path.join(data_dir, fn) + '.npz')
+        train_df['filename'] = train_df['filename'].map(lambda fn: path.join(data_dir, fn) + '.hdf5')
+        training_val_df['filename'] = training_val_df['filename'].map(lambda fn: path.join(data_dir, fn) + '.hdf5')
+        eval_df['filename'] = eval_df['filename'].map(lambda fn: path.join(data_dir, fn) + '.hdf5')
 
-    return train_df, validation_df, test_df
+    return train_df, training_val_df, eval_df
 
 
 def show_metrics(model, evaluation):
@@ -100,20 +90,14 @@ def main():
     model_cls = factory("models.{}".format(config["model"]["name"]))
     trainer_cls = factory("trainers.{}".format(config["trainer"]["name"]))
 
-    # get data sets
-    train_df, validation_df, test_df = get_data(config, extract_real_time=False)
-
     # create data generators for the data sets
     loader_params = config["data_loader"]
-    training_generator = data_loader_cls(train_df['fname'].values, train_df['label_idx'].values, shuffle=True,
-                                         **loader_params)
-    validation_generator = data_loader_cls(validation_df['fname'].values, validation_df['label_idx'].values,
-                                           **loader_params)
-    testing_generator = data_loader_cls(test_df['fname'].values, test_df['label_idx'].values,
-                                        **loader_params)
+    training_generator = data_loader_cls("train", shuffle=True, **loader_params)
+    eval_generator = data_loader_cls("eval", **loader_params)
 
     # train ze model
-    model = model_cls(training_generator.feature_dim, training_generator.n_classes)
+    model_params = config['model']
+    model = model_cls(training_generator.feature_dim, training_generator.n_classes, **model_params)
     trainer = trainer_cls(
         config["exp"]["name"],
         model.model,
@@ -122,9 +106,9 @@ def main():
     )
     trainer.train(
         training_generator,
-        validation_generator
+        eval_generator
     )
-    show_metrics(trainer.model, trainer.test(testing_generator))
+    show_metrics(trainer.model, trainer.test(eval_generator))
 
 
 if __name__ == '__main__':

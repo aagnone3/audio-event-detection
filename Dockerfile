@@ -37,6 +37,8 @@ RUN pip install \
     Keras \
     wordcloud \
     librosa \
-    jupyter_contrib_nbextensions
+    h5py \
+    jupyter_contrib_nbextensions \
+    python_speech_features
 
 RUN jupyter contrib nbextension install --user

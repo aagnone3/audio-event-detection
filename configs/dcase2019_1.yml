@@ -1,0 +1,56 @@
+exp:
+    name: "DCASE 2019, Task 1"
+
+data_loader:
+    name: "dcase2019_1.DCASEDataGenerator"
+    train:
+        data_dir: "/corpora/DCASE2019_task1/dataset/audio/train"
+        feature_dir: "/corpora/DCASE2019_task1/features"
+        meta_file: "/corpora/DCASE2019_task1/dataset/metadata/train/_train.csv"
+        batch_size: 16
+    eval:
+        data_dir: "/corpora/DCASE2019_task1/dataset/audio/validation"
+        feature_dir: "/corpora/DCASE2019_task1/features"
+        meta_file: "/corpora/DCASE2019_task1/dataset/metadata/validation/_validation.csv"
+        batch_size: 16
+        
+    unique_labels_fn: "/corpora/DCASE2019/task1/dataset/unique_labels.lst"
+    n_classes: 11
+    nfft: 2048
+    n_mels: 64
+    frame_size_ms: 25
+    hop_size_ms: 10
+    sampling_rate: 16000
+    audio_duration: 0.960
+
+model:
+    name: "convolutional.CNN"
+    learning_rate: 0.0001
+    conv_filters: 16
+    filter_size: 3
+    rec_layers: 1  # 2
+    rec_layer_size: 32  # 100
+
+trainer:
+    name: "simple.SimpleTrainer"
+    num_epochs: 100
+    validation_split: 0.20
+    verbose_training: True
+
+callbacks:
+    ModelCheckpoint:
+        monitor: val_loss
+        mode: min
+        save_best_only: True
+        save_weights_only: True
+        verbose: True
+    EarlyStopping:
+        monitor: val_loss
+        patience: 10
+    ReduceLROnPlateau:
+        monitor: val_loss
+        factor: 0.1
+        patience: 10
+        min_lr: 0.000001
+    tensorboard_log_dir: logs
+    tensorboard_write_graph: True

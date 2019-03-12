@@ -1,5 +1,5 @@
 import os
-from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping, ReduceLROnPlateau, ProgbarLogger
+from keras import callbacks
 
 import tensorflow as tf
 from trainers.base import BaseTrain
@@ -14,7 +14,6 @@ class SimpleTrainer(BaseTrain):
 
     defaults = {
         "num_epochs": 50,
-        "validation_split": 0.20,
         "verbose_training": False
     }
 
@@ -35,23 +34,24 @@ class SimpleTrainer(BaseTrain):
 
     def init_callbacks(self):
         self.callbacks.append(
-            ModelCheckpoint(
+            callbacks.ModelCheckpoint(
                 filepath=self.best_model_fn,
                 **self.callbacks_config["ModelCheckpoint"]
             )
         )
         self.callbacks.append(
-            EarlyStopping(
+            callbacks.EarlyStopping(
                 **self.callbacks_config["EarlyStopping"]
             )
         )
         self.callbacks.append(
-            ReduceLROnPlateau(
+            callbacks.ReduceLROnPlateau(
                 **self.callbacks_config["ReduceLROnPlateau"]
             )
         )
+        self.callbacks.append(callbacks.TerminateOnNaN())
         self.callbacks.append(
-            TensorBoard(
+            callbacks.TensorBoard(
                 log_dir=self.callbacks_config["tensorboard_log_dir"],
                 write_graph=self.callbacks_config["tensorboard_write_graph"],
             )

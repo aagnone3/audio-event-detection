@@ -10,7 +10,7 @@ class BaseDataLoader(Sequence):
 
         # check undefined arguments
         for name, value in self.defaults.items():
-            if value is None:
+            if getattr(self, name) is None:
                 raise ValueError("Did not supply a value for {}.".format(name))
 
     def get_train_data(self):
