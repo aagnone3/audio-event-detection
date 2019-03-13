@@ -7,12 +7,12 @@ data_loader:
         data_dir: "/corpora/DCASE2019_task4/dataset/audio/train"
         feature_dir: "/corpora/DCASE2019_task4/features"
         meta_file: "/corpora/DCASE2019_task4/dataset/metadata/train/_train.csv"
-        batch_size: 16
+        batch_size: 32
     eval:
         data_dir: "/corpora/DCASE2019_task4/dataset/audio/validation"
         feature_dir: "/corpora/DCASE2019_task4/features"
         meta_file: "/corpora/DCASE2019_task4/dataset/metadata/validation/_validation.csv"
-        batch_size: 16
+        batch_size: 32
         
     unique_labels_fn: "etc/unique_labels.lst"
     label_encoder_fn: "/corpora/DCASE2019_task4/dataset/label_encoder.pkl"
@@ -26,15 +26,15 @@ data_loader:
 
 model:
     name: "recurrent.CRNN"
-    learning_rate: 0.0001
+    learning_rate: 0.001
     conv_filters: 16
-    filter_size: 3
-    rec_layers: 2  # 2
-    rec_layer_size: 100  # 100
+    filter_size: 4
+    rec_layers: 1  # 2
+    rec_layer_size: 16  # 100
 
 trainer:
     name: "simple.SimpleTrainer"
-    num_epochs: 2
+    num_epochs: 5
     verbose_training: True
 
 callbacks:

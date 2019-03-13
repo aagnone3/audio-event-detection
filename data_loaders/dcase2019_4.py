@@ -1,5 +1,6 @@
 import os
 import h5py
+import logging
 from os import path
 import numpy as np
 import scipy as sp
@@ -22,6 +23,9 @@ from collections import defaultdict
 
 from feature_extraction.audio import log_mel_fbe
 from data_loaders.base import BaseDataLoader
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class DCASEDataGenerator(BaseDataLoader):
@@ -49,7 +53,7 @@ class DCASEDataGenerator(BaseDataLoader):
         self.file_paths = self.meta['filename'].map(lambda fn: path.join(self.feature_dir, fn + ".hdf5")).values
         self.indices = np.arange(len(self.file_paths))
         self.labels = self.meta["event_labels"].values
-        
+
         # audio extraction parameters
         self.audio_length = self.sampling_rate * self.audio_duration
         self.frame_length = int(self.sampling_rate * self.frame_size_ms / 1000.0)
@@ -78,7 +82,7 @@ class DCASEDataGenerator(BaseDataLoader):
     def __getitem__(self, index):
         indices = self.indices[index * self.batch_size:(index + 1) * self.batch_size]
         return self.__data_generation(indices)
-    
+
     def make_labels(self, label_map, raw_labels, n_classes):
         """
         e.g. a,b -> 0101
@@ -86,12 +90,16 @@ class DCASEDataGenerator(BaseDataLoader):
         labels = list()
         for label in raw_labels:
             if ',' in label:
-                label_one_hots = to_categorical([label_map[_label] for _label in label.split(',')], num_classes=n_classes)
+                # multi-hot
+                label_one_hots = to_categorical(
+                    [label_map[_label] for _label in label.split(',')],
+                    num_classes=n_classes
+                )
                 labels.append(np.array(label_one_hots, dtype=int).sum(axis=0))
             else:
                 labels.append(to_categorical(label_map[label], num_classes=self.n_classes))
         return np.array(labels)
-                    
+
 
     def on_epoch_end(self):
         self.indices = np.arange(len(self.file_paths))
@@ -99,25 +107,40 @@ class DCASEDataGenerator(BaseDataLoader):
             np.random.shuffle(self.indices)
 
     def __data_generation(self, indices):
-        cur_batch_size = len(indices)
-
-        example_lengths = np.empty((len(indices), ), dtype=int)
-        label_lengths = np.ones((len(indices), ), dtype=int)
-        max_length = -1
         data = list()
+        labels = list()
+        example_lengths = list()
+        cur_batch_size = 0
+        max_length = -1
         for i, index in enumerate(indices):
-            with h5py.File(self.file_paths[index], 'r') as f:
-                data.append(np.reshape(f['data'], (-1, self.n_mels)))
-                example_lengths[i] = data[-1].shape[0]
-                if example_lengths[i] > max_length:
-                    max_length = example_lengths[i]
-                
+            try:
+                with h5py.File(self.file_paths[index], 'r') as f:
+                    # parse features
+                    data.append(np.reshape(f['data'], (-1, self.n_mels)))
+
+                    # add label
+                    labels.append(self.labels[i])
+
+                    # note the length of the sequence, and update the max
+                    example_lengths.append(data[-1].shape[0])
+                    if example_lengths[-1] > max_length:
+                        max_length = example_lengths[-1]
+
+                    cur_batch_size += 1
+            except Exception as e:
+                pass
+                # logger.error(e, exc_info=True)
+
+        # gather parsed features into an array
         X = np.empty((cur_batch_size, max_length, self.feature_dim))
-        for i, index in enumerate(indices):
+        for i in range(cur_batch_size):
             X[i][:data[i].shape[0]][:] = data[i]
 
-        y = self.labels[indices]
-        
+        # finalize other data
+        y = np.array(labels)
+        example_lengths = np.array(example_lengths)
+        label_lengths = np.ones((len(y),), dtype=int)
+
         inputs = {
             'input': X,
             'labels': y,

@@ -108,7 +108,7 @@ def main():
         training_generator,
         eval_generator
     )
-    show_metrics(trainer.model, trainer.test(eval_generator))
+    # show_metrics(trainer.model, trainer.test(eval_generator))
 
 
 if __name__ == '__main__':
