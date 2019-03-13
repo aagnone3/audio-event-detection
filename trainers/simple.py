@@ -63,8 +63,7 @@ class SimpleTrainer(BaseTrain):
             validation_data=validation_data_generator,
             epochs=self.num_epochs,
             verbose=self.verbose_training,
-            callbacks=self.callbacks,
-            metrics=['acc']
+            callbacks=self.callbacks
         )
 
         self.loss.extend(history.history['loss'])
