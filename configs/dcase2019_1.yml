@@ -1,0 +1,61 @@
+exp:
+    name: "DCASE 2019, Task 1"
+
+data_loader:
+    name: "dcase2019_1.DCASEDataGenerator"
+    train:
+        data_dir: "/corpora/DCASE2019_task1/TAU-urban-acoustic-scenes-2019-development/audio"
+        feature_dir: "/corpora/DCASE2019_task1/features"
+        meta_file: "/corpora/DCASE2019_task1/TAU-urban-acoustic-scenes-2019-development/evaluation_setup/fold1_train.csv"
+        batch_size: 32
+    eval:
+        data_dir: "/corpora/DCASE2019_task1/TAU-urban-acoustic-scenes-2019-development/audio"
+        feature_dir: "/corpora/DCASE2019_task1/features"
+        meta_file: "/corpora/DCASE2019_task1/TAU-urban-acoustic-scenes-2019-development/evaluation_setup/fold1_evaluate.csv"
+        batch_size: 32
+        
+    unique_labels_fn: "/corpora/DCASE2019_task1/unique_labels.lst"
+    scaler_fn: "/corpora/DCASE2019_task1/scaler.pkl"
+    n_classes: 11
+    nfft: 2048
+    n_mels: 64
+    frame_size_ms: 25
+    hop_size_ms: 10
+    sampling_rate: 16000
+    audio_duration: 10.0
+
+model:
+    # name: "recurrent.CRNN"
+    # learning_rate: 0.001
+    # conv_filters: 32
+    # filter_size: 4
+    # rec_layers: 1  # 2
+    # rec_layer_size: 16  # 100
+
+    name: "convolutional.CNN"
+    learning_rate: 0.001
+    # conv_filters: 16
+    # filter_size: [4, 10]
+
+trainer:
+    name: "simple.SimpleTrainer"
+    num_epochs: 100
+    verbose_training: True
+
+callbacks:
+    ModelCheckpoint:
+        monitor: val_loss
+        mode: min
+        save_best_only: True
+        save_weights_only: True
+        verbose: True
+    EarlyStopping:
+        monitor: val_loss
+        patience: 10
+    ReduceLROnPlateau:
+        monitor: val_loss
+        factor: 0.1
+        patience: 10
+        min_lr: 0.000001
+    tensorboard_log_dir: logs
+    tensorboard_write_graph: True

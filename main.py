@@ -97,6 +97,7 @@ def main():
 
     # train ze model
     model_params = config['model']
+    print(training_generator.feature_dim)
     model = model_cls(training_generator.feature_dim, training_generator.n_classes, **model_params)
     trainer = trainer_cls(
         config["exp"]["name"],

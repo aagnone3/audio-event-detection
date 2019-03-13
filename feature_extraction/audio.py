@@ -27,6 +27,75 @@ def zero_fill(arr, target_shape):
 
 
 def log_mel_fbe(fn, output_dir=os.getcwd(), sampling_rate=44100,
+                nfft=1024, n_mels=64, spectral_frame_length_s=10.0,
+                frame_length_s=0.025, hop_length_s=0.010, force=False):
+
+    frame_length = int(sampling_rate * frame_length_s)
+    hop_length = int(sampling_rate * hop_length_s)
+    spectral_frame_length = int(sampling_rate * spectral_frame_length_s)
+    f_to_mel = filters.mel(sr=sampling_rate, n_fft=nfft, n_mels=n_mels)
+    overlap_length = frame_length - hop_length
+    window = np.hamming(frame_length)
+    spectral_chunk_size = int(sampling_rate * spectral_frame_length_s)
+    n_frames_per_chunk = int(spectral_chunk_size / hop_length)
+
+    def extract(audio_fn):
+        # Read and Resample the audio
+        try:
+            data, _ = librosa.core.load(audio_fn, sr=sampling_rate)
+            data = normalize(data)
+        except Exception as e:
+            logging.exception(e)
+            return None
+
+        # ensure length
+        if len(data) > spectral_chunk_size:
+            data = data[:spectral_chunk_size]
+        elif len(data) < spectral_chunk_size:
+            data = np.pad((spectral_chunk_size - len(data), ), mode='constant', constant_values=0)
+
+        # spectrogram
+        f, t, Sxx = sp.signal.spectrogram(
+            data,
+            fs=sampling_rate,
+            window=window,
+            nperseg=frame_length,
+            noverlap=overlap_length,
+            nfft=nfft
+        )
+
+        # spectrogram -> log mel fb
+        mel_spec = f_to_mel.dot(Sxx)
+        log_mel_spec = np.log(1e-8 + mel_spec)
+        log_mel_spec = np.expand_dims(log_mel_spec, axis=-1)
+
+        return log_mel_spec
+
+    # create the output directory if it does not exist
+    if not path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    # form the filename template, and check to see if features have already been extracted.
+    # if they have, return the filenames without extracting again
+    out_fn = path.join(output_dir, path.basename(fn) + '.hdf5')
+    if path.exists(out_fn) and not force:
+        return out_fn
+
+    # extract features
+    spectra = extract(fn)
+
+    # indicate bad features if so
+    if spectra is None:
+        return "BAD_" + out_fn
+
+    # write features to disk
+    with h5py.File(out_fn, 'w') as f:
+        data = f.create_dataset('data', data=spectra)
+
+    return out_fn
+
+
+def log_mel_fbe_sequence(fn, output_dir=os.getcwd(), sampling_rate=44100,
                 nfft=1024, n_mels=64, spectral_frame_length_s=1.0, spectral_hop_length_s=0.250,
                 frame_length_s=0.025, hop_length_s=0.010, force=False):
 
