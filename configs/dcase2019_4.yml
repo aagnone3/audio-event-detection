@@ -26,11 +26,12 @@ data_loader:
 
 model:
     name: "recurrent.CRNN"
-    learning_rate: 0.001
-    conv_filters: 16
-    filter_size: 4
+    learning_rate: 0.0001
+    conv_filters: 128
+    conv_stride: 1
+    filter_size: 8
     rec_layers: 1  # 2
-    rec_layer_size: 16  # 100
+    rec_layer_size: 128  # 100
 
 trainer:
     name: "simple.SimpleTrainer"

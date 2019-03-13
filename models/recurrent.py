@@ -138,7 +138,6 @@ class CRNN(BaseModel):
         self.model = add_ctc_loss(self.model)
         self.model.compile(
             optimizer=optimizers.Adam(self.learning_rate),
-            # loss=losses.binary_crossentropy,
             loss={'ctc': lambda y_true, y_pred: y_pred},
             # metrics=['acc']
         )
