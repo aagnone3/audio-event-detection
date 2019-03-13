@@ -2,8 +2,9 @@ DIST_DIR ?= ${PWD}/dist
 BUILD_DIR ?= ${PWD}/build
 TAG ?= aed-network
 
-CONFIG_FN ?= configs/dcase2019_4.yml
+CONFIG_FN ?= configs/dcase2019_1.yml
 JUPYTER_PORT ?= 8891
+DEBUG ?= False
 
 .PHONY: container
 container:
@@ -44,7 +45,7 @@ extract:
 		-ti \
 		--rm \
 		${TAG} \
-		python feature_extraction/extract.log_mfb.py
+		python feature_extraction/extract.log_mfb_spec.py
 
 .PHONY: debug
 debug:

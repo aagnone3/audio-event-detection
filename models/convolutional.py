@@ -33,27 +33,32 @@ class CNN(BaseModel):
         self.model = Sequential([
             Convolution2D(32, (4, 10), padding="same", input_shape=self.input_dim),
             BatchNormalization(),
+            Dropout(0.25),
             LeakyReLU(),
             MaxPool2D(),
 
-            Convolution2D(32, (4, 10), padding="same"),
+            Convolution2D(64, (4, 10), padding="same"),
             BatchNormalization(),
+            Dropout(0.25),
             LeakyReLU(),
             MaxPool2D(),
 
-            Convolution2D(32, (4, 10), padding="same"),
+            Convolution2D(128, (4, 10), padding="same"),
             BatchNormalization(),
+            Dropout(0.25),
             LeakyReLU(),
             MaxPool2D(),
 
-            Convolution2D(32, (4, 10), padding="same"),
+            Convolution2D(256, (4, 10), padding="same"),
             BatchNormalization(),
+            Dropout(0.25),
             LeakyReLU(),
             MaxPool2D(),
 
             Flatten(),
-            Dense(64),
+            Dense(128),
             BatchNormalization(),
+            Dropout(0.25),
             LeakyReLU(),
             Dense(self.n_classes, activation=softmax)
         ])
@@ -68,28 +73,32 @@ class CNN(BaseModel):
         inp = Input(shape=self.input_dim)
         x = Convolution2D(32, (4, 10), padding="same")(inp)
         x = BatchNormalization()(x)
+        x = Dropout(0.25)(x)
         x = Activation("relu")(x)
-        x = MaxPool2D()(x)
+        x = MaxPool2D((2, 10))(x)
 
-        x = Convolution2D(32, (4, 10), padding="same")(x)
+        x = Convolution2D(64, (4, 10), padding="same")(x)
         x = BatchNormalization()(x)
+        x = Dropout(0.25)(x)
         x = Activation("relu")(x)
-        x = MaxPool2D()(x)
+        x = MaxPool2D((4, 100))(x)
 
-        x = Convolution2D(32, (4, 10), padding="same")(x)
-        x = BatchNormalization()(x)
-        x = Activation("relu")(x)
-        x = MaxPool2D()(x)
+        # x = Convolution2D(128, (4, 10), padding="same")(x)
+        # x = BatchNormalization()(x)
+        # x = Dropout(0.25)(x)
+        # x = Activation("relu")(x)
+        # x = MaxPool2D((2, 10))(x)
 
-        x = Convolution2D(32, (4, 10), padding="same")(x)
-        x = BatchNormalization()(x)
-        x = Activation("relu")(x)
-        x = MaxPool2D()(x)
+        # x = Convolution2D(256, (4, 10), padding="same")(x)
+        # x = BatchNormalization()(x)
+        # x = Dropout(0.25)(x)
+        # x = Activation("relu")(x)
+        # x = MaxPool2D((2, 10))(x)
 
         x = Flatten()(x)
-        x = Dense(64)(x)
-        x = BatchNormalization()(x)
-        x = Activation("relu")(x)
+        # x = Dense(128)(x)
+        # x = BatchNormalization()(x)
+        # x = Activation("relu")(x)
         out = Dense(self.n_classes, activation=softmax)(x)
 
         self.model = Model(inputs=inp, outputs=out)
