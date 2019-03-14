@@ -1,5 +1,5 @@
 exp:
-    name: "DCASE 2019, Task 4"
+    name: "dcase2019_4"
 
 data_loader:
     name: "dcase2019_4.DCASEDataGenerator"
@@ -26,16 +26,17 @@ data_loader:
 
 model:
     name: "recurrent.CRNN"
-    learning_rate: 0.0001
+    load_checkpoint_file: "experiments/dcase2019_4/checkpoints/weights.128.92.hdf5"
+    learning_rate: 0.00001
     conv_filters: 128
     conv_stride: 1
     filter_size: 8
-    rec_layers: 1  # 2
-    rec_layer_size: 128  # 100
+    rec_layers: 1
+    rec_layer_size: 128
 
 trainer:
     name: "simple.SimpleTrainer"
-    num_epochs: 5
+    num_epochs: 100
     verbose_training: True
 
 callbacks:

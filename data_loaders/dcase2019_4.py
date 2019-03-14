@@ -1,10 +1,11 @@
 import os
 import h5py
-from os import path
+import torch
+import logging
 import numpy as np
 import scipy as sp
 import pandas as pd
-import torch
+from os import path
 from tqdm import tqdm
 import multiprocessing as mp
 from functools import partial
@@ -13,15 +14,18 @@ from sklearn.externals import joblib
 
 from keras.utils import to_categorical
 from keras.utils import Sequence
+import librosa
 from librosa.core import stft
 from librosa.util import normalize
 from librosa import filters
-import librosa
 from python_speech_features import mfcc
 from collections import defaultdict
 
 from feature_extraction.audio import log_mel_fbe
 from data_loaders.base import BaseDataLoader
+
+logging.basicConfig(level=logging.INFO, filename='train.log')
+logger = logging.getLogger(__name__)
 
 
 class DCASEDataGenerator(BaseDataLoader):
@@ -48,7 +52,7 @@ class DCASEDataGenerator(BaseDataLoader):
         self.feature_dir = mode_configs.get('feature_dir', 'features')
         self.file_paths = self.meta['filename'].map(lambda fn: path.join(self.feature_dir, fn + ".hdf5")).values
         self.indices = np.arange(len(self.file_paths))
-        self.labels = self.meta["event_labels"].values
+        self.labels = self.meta["label"].values
 
         # audio extraction parameters
         self.audio_length = self.sampling_rate * self.audio_duration
@@ -99,30 +103,35 @@ class DCASEDataGenerator(BaseDataLoader):
             np.random.shuffle(self.indices)
 
     def __data_generation(self, indices):
-        cur_batch_size = len(indices)
-
-        example_lengths = np.empty((len(indices), ), dtype=int)
-        label_lengths = np.ones((len(indices), ), dtype=int)
-        max_length = -1
+        example_lengths = list()
         data = list()
+        y = list()
+        max_length = -1
+        cur_batch_size = 0
         for i, index in enumerate(indices):
-            with h5py.File(self.file_paths[index], 'r') as f:
-                data.append(np.reshape(f['data'], (-1, self.n_mels)))
-                example_lengths[i] = data[-1].shape[0]
-                if example_lengths[i] > max_length:
-                    max_length = example_lengths[i]
+            try:
+                with h5py.File(self.file_paths[index], 'r') as f:
+                    data.append(np.reshape(f['data'], (-1, self.n_mels)))
+                    example_lengths.append(data[-1].shape[0])
+                    if example_lengths[-1] > max_length:
+                        max_length = example_lengths[-1]
+
+                y.append(self.labels[index])
+
+                cur_batch_size += 1
+            except Exception as e:
+                logger.error("Error processing file {}.".format(self.file_paths[index]))
+                logger.error(e, exc_info=True)
 
         X = np.empty((cur_batch_size, max_length, self.feature_dim))
-        for i, index in enumerate(indices):
+        for i in range(len(data)):
             X[i][:data[i].shape[0]][:] = data[i]
-
-        y = self.labels[indices]
 
         inputs = {
             'input': X,
-            'labels': y,
-            'label_lengths': label_lengths,
-            'example_lengths': example_lengths
+            'labels': np.array(y),
+            'label_lengths': np.ones((cur_batch_size, ), dtype=int),
+            'example_lengths': np.array(example_lengths)
         }
         outputs = {
             'ctc': np.zeros([cur_batch_size])

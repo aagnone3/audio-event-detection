@@ -24,10 +24,6 @@ class CNN(BaseModel):
 
     def __init__(self, input_dim, n_classes, **kwargs):
         super(CNN, self).__init__(**kwargs)
-        self.input_dim = input_dim
-        print("Input dim: {}".format(self.input_dim))
-        self.n_classes = n_classes
-        self.build_seq_model()
 
     def build_seq_model(self):
         self.model = Sequential([

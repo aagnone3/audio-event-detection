@@ -2,7 +2,8 @@ DIST_DIR ?= ${PWD}/dist
 BUILD_DIR ?= ${PWD}/build
 TAG ?= aed-network
 
-CONFIG_FN ?= configs/dcase2019_1.yml
+TASK ?= 4
+CONFIG_FN ?= configs/dcase2019_${TASK}.yml
 JUPYTER_PORT ?= 8891
 DEBUG ?= False
 

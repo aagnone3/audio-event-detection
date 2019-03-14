@@ -26,7 +26,7 @@ class SimpleTrainer(BaseTrain):
         self.val_acc = []
         self.best_model_fn = os.path.join(
             self.callbacks_config["checkpoint_dir"],
-            "{}.hdf5".format(self.description)
+            "weights.{val_loss:.2f}.hdf5"
         )
 
         self.callbacks = []
@@ -66,10 +66,10 @@ class SimpleTrainer(BaseTrain):
             callbacks=self.callbacks
         )
 
-        self.loss.extend(history.history['loss'])
-        self.acc.extend(history.history['acc'])
-        self.val_loss.extend(history.history['val_loss'])
-        self.val_acc.extend(history.history['val_acc'])
+        # self.loss.extend(history.history['loss'])
+        # self.acc.extend(history.history['acc'])
+        # self.val_loss.extend(history.history['val_loss'])
+        # self.val_acc.extend(history.history['val_acc'])
 
     def test(self, data_generator):
         # load the weights for the best model

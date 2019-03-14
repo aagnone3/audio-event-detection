@@ -105,11 +105,7 @@ class CRNN(BaseModel):
     }
 
     def __init__(self, input_dim, n_classes, **kwargs):
-        super(CRNN, self).__init__(**kwargs)
-        self.input_dim = input_dim
-        print("Input dim: {}".format(self.input_dim))
-        self.n_classes = n_classes
-        self.build_model()
+        super(CRNN, self).__init__(input_dim, n_classes, **kwargs)
 
     def build_model(self):
         # Main acoustic input
