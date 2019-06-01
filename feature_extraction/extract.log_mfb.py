@@ -13,17 +13,15 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 from tqdm import tqdm
 
-from audio import log_mel_fbe
+from audio import log_filterbank_energy_sequence, log_filterbank_energy
 
 
-nfft = 1024
-n_mels = 64
-dim = (n_mels, 132, 1)
-sampling_rate = 16000
-spectral_frame_length_s = 0.960
-spectral_hop_length_s = 0.250
-frame_length_s = 0.025
-hop_length_s = 0.010
+nfft = 2048
+n_freq_bins = 64
+sampling_rate = 44100
+frame_length_s = 0.040
+hop_length_s = 0.020
+duration_s = 10.0
 
 
 def mp_with_pbar(func, args, n_processes = 2):
@@ -49,13 +47,12 @@ def mp_with_pbar(func, args, n_processes = 2):
 def extract(file_list, train_scaler=False):
     fns = np.loadtxt(file_list, dtype='str')
     cur_batch_size = len(fns)
-    f_to_mel = filters.mel(sr=sampling_rate, n_fft=nfft, n_mels=n_mels)
+    f_to_mel = filters.mel(sr=sampling_rate, n_fft=nfft, n_freq_bins=n_freq_bins)
 
     print("Extracting features")
-    mp_func = partial(log_mel_fbe, output_dir="features", sampling_rate=sampling_rate,
-                      nfft=nfft, n_mels=n_mels, spectral_frame_length_s=spectral_frame_length_s,
-                      spectral_hop_length_s=spectral_hop_length_s, frame_length_s=frame_length_s,
-                      hop_length_s=hop_length_s, force=False)
+    mp_func = partial(log_filterbank_energy, output_dir="features", sampling_rate=sampling_rate,
+                      nfft=nfft, n_freq_bins=n_freq_bins, frame_length_s=frame_length_s, duration_s=duration_s,
+                      hop_length_s=hop_length_s, force=True, mel_scale=True)
     feature_fns = mp_with_pbar(mp_func, fns, mp.cpu_count())
 
     if train_scaler:
@@ -73,9 +70,7 @@ def extract(file_list, train_scaler=False):
 
 if __name__ == '__main__':
     values = [
-        ['asc.lst', 'asc.features.lst', False],
-        # ['train.synth.lst', 'train.synth.features.lst', False],
-        # ['eval.synth.lst', 'eval.synth.features.lst', False],
+        ['all_wavs.lst', 'all_features.lst', False],
     ]
     for fn_in, fn_out, train_scaler in values:
         fns = extract(
